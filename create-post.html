@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Makale</title>
+
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+</head>
+<body class="bg-base-200 min-h-screen flex items-center justify-center">
+
+<div class="card w-96 bg-base-100 shadow">
+
+<div class="card-body">
+
+<h2 class="card-title" id="pageTitle">
+Yeni Makale
+</h2>
+
+<input id="title" class="input input-bordered" placeholder="Başlık">
+<textarea id="body" class="textarea textarea-bordered" placeholder="İçerik"></textarea>
+
+<select id="category" class="select select-bordered">
+<option>Frontend</option>
+<option>Backend</option>
+<option>DevOps</option>
+</select>
+
+<button id="saveBtn" class="btn btn-primary">Kaydet</button>
+
+<!-- Buton referansı -->
+<button id="actionBtn" class="btn mt-2">Buton</button>
+
+</div>
+</div>
+
+<script>
+
+const API_URL = "https://api.zaferayan.com";
+const token = localStorage.getItem("token");
+
+if(!token){
+  window.location.href = "login.html";
+}
+
+const params = new URLSearchParams(window.location.search);
+const editId = params.get("id");
+
+// Buton işlemi
+const actionBtn = document.getElementById("actionBtn");
+
+if(editId){
+  // Düzenleme → Geri Dön
+  document.getElementById("pageTitle").innerText = "Makale Düzenle";
+  actionBtn.innerText = "Geri Dön";
+  actionBtn.classList.add("btn-secondary");
+  actionBtn.addEventListener("click", ()=>{
+    window.location.href = "articles.html";
+  });
+
+  // Edit için formu doldur
+  const loadPost = async ()=>{
+    const { data } = await axios.get(API_URL + "/posts");
+    const post = data.find(p => p.id == editId);
+    document.getElementById("title").value = post.title;
+    document.getElementById("body").value = post.body;
+    document.getElementById("category").value = post.category;
+  };
+  loadPost();
+
+}else{
+  // Yeni makale → Çıkış Yap
+  actionBtn.innerText = "Çıkış Yap";
+  actionBtn.classList.add("btn-error");
+  actionBtn.addEventListener("click", ()=>{
+    localStorage.clear();
+    window.location.href = "login.html";
+  });
+}
+
+// Kaydet butonu
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  const title = document.getElementById("title").value;
+  const body = document.getElementById("body").value;
+  const category = document.getElementById("category").value;
+
+  try {
+    if(editId){
+      // Düzenleme
+      await axios.put(
+        API_URL + "/posts/" + editId,
+        { title , body , category },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }else{
+      // Yeni makale
+      await axios.post(
+        API_URL + "/posts",
+        { title , body , category },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    window.location.href = "articles.html";
+
+  } catch(err){
+    alert("Hata: " + err.message);
+  }
+
+});
+
+</script>
+
+</body>
+</html>
